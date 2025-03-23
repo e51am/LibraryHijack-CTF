@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y \
     openssh-server 
 
 RUN useradd -m ctfuser && echo 'ctfuser:password' | chpasswd
-RUN echo 'ctfuser ALL=(ALL) NOPASSWD: /usr/bin/python3 vulnerable_script.py' >> /etc/sudoers
+RUN echo 'ctfuser ALL=(ALL) SETENV: NOPASSWD: /usr/bin/python3 /opt/scripts/vulnerable_script.py' >> /etc/sudoers
 
 RUN service ssh start
 RUN mkdir -p /opt/scripts
